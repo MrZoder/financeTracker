@@ -1,0 +1,36 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "trajectory-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "3210"
+      ],
+      "port": 3210
+    },
+    {
+      "name": "trajectory-sandbox",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/dev-sandbox.mjs",
+        "--fresh"
+      ],
+      "port": 3210
+    },
+    {
+      "name": "trajectory-sandbox-demo",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/dev-sandbox.mjs",
+        "--fresh",
+        "--demo"
+      ],
+      "port": 3210
+    }
+  ]
+}
