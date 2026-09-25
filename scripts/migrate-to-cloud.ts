@@ -55,7 +55,7 @@ async function main() {
   const force = process.argv.includes("--force");
 
   const { db: source, client } = await openEmbeddedDatabase();
-  const pg = postgres(url, { max: 1, prepare: false, connect_timeout: 20 });
+  const pg = postgres(url, { max: 1, prepare: false, connect_timeout: 20, onnotice: () => undefined });
   const target = drizzlePostgres(pg, { schema: s });
 
   try {
@@ -69,11 +69,22 @@ async function main() {
     }
     const [localSettings] = await source.select().from(s.userSettings);
     const cloudUsers = await target.select().from(s.users);
-    if (cloudUsers.length > 0 && !force) {
+    const dryRun = process.argv.includes("--dry-run");
+    if (cloudUsers.length > 0 && !force && !dryRun) {
       console.error(`The cloud database already has a user (${cloudUsers[0].name}). Re-run with --force to replace it.`);
       process.exit(1);
     }
     if (localSettings?.dataMode === "demo") console.warn("Note: the local database holds the fictional DEMO dataset — copying it as-is.");
+
+    if (dryRun) {
+      console.log(`Local: ${localUser.name} (${localSettings?.dataMode ?? "live"}, onboarding ${localSettings?.onboardingCompleted ? "done" : "not done"})`);
+      for (const [name, table] of ORDER) {
+        const rows = await source.select().from(table);
+        console.log(`  ${name.padEnd(22)} ${rows.length}`);
+      }
+      console.log(`Cloud: ${cloudUsers.length ? `${cloudUsers[0].name} already present` : "empty"}. Nothing copied (dry run).`);
+      return;
+    }
 
     console.log(`Copying ${localUser.name}'s data (${localSettings?.dataMode ?? "live"})…`);
     await target.transaction(async (tx) => {
