@@ -21,7 +21,7 @@ export function formatAUD(cents: Cents, options: MoneyFormatOptions = {}): strin
   const negative = cents < 0;
   const abs = Math.abs(cents);
   let body: string;
-  if (options.compact && abs >= 100_000_00) {
+  if (options.compact && abs >= 1_000_000_00) {
     body = `$${(abs / 100_000_000).toFixed(abs >= 1_000_000_000 ? 1 : 2).replace(/\.?0+$/, "")}m`;
   } else if (options.compact && abs >= 1_000_00) {
     body = `$${(abs / 100_000).toFixed(1).replace(/\.0$/, "")}k`;

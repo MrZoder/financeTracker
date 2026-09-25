@@ -7,26 +7,13 @@
  *
  * Stop any running local Trajectory server first (one process per database).
  */
-import fs from "node:fs";
+import "./env";
 import path from "node:path";
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import { migrate as migratePostgres } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import { openEmbeddedDatabase } from "@/db/client";
 import * as s from "@/db/schema";
-
-function loadDotenv() {
-  for (const file of [".env.local", ".env"]) {
-    const p = path.join(process.cwd(), file);
-    if (!fs.existsSync(p)) continue;
-    for (const line of fs.readFileSync(p, "utf8").split(/\r?\n/)) {
-      const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/.exec(line);
-      if (!m || line.trim().startsWith("#")) continue;
-      const value = m[2].replace(/^["']|["']$/g, "");
-      if (process.env[m[1]] === undefined) process.env[m[1]] = value;
-    }
-  }
-}
 
 const ORDER = [
   ["accounts", s.accounts],
@@ -46,7 +33,6 @@ const ORDER = [
 ] as const;
 
 async function main() {
-  loadDotenv();
   const url = process.env.DATABASE_URL;
   if (!url) {
     console.error("DATABASE_URL is not set. Put your Neon connection string in .env.local first.");

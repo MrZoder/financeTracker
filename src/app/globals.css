@@ -144,8 +144,24 @@
     background-image:
       radial-gradient(1200px 600px at 50% -10%, rgba(52, 211, 153, 0.07), transparent 60%),
       radial-gradient(900px 500px at 100% 100%, rgba(56, 189, 248, 0.05), transparent 60%);
-    background-attachment: fixed;
     min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+  /* Fixed backgrounds jank on iOS Safari; keep the effect for pointer devices only. */
+  @media (hover: hover) and (pointer: fine) {
+    body {
+      background-attachment: fixed;
+    }
+  }
+  button,
+  [role="button"],
+  a,
+  input,
+  select,
+  textarea,
+  label {
+    touch-action: manipulation;
   }
   ::selection {
     background: rgba(52, 211, 153, 0.28);
@@ -174,6 +190,26 @@
   input[type="number"] {
     -moz-appearance: textfield;
     appearance: textfield;
+  }
+}
+
+/*
+ * iOS Safari zooms the page when a focused form control's font is under 16px.
+ * On touch devices every small-text control is bumped to 16px; large money
+ * inputs keep their own size. Unlayered so it wins over utilities.
+ */
+@media (pointer: coarse) {
+  input:is(.text-sm, .text-xs, .text-\[15px\]),
+  select:is(.text-sm, .text-xs, .text-\[15px\]),
+  textarea:is(.text-sm, .text-xs, .text-\[15px\]) {
+    font-size: 16px;
+  }
+}
+
+/* Standalone (home-screen) mode: keep content clear of the notch and home indicator. */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
   }
 }
 

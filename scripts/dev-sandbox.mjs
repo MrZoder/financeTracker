@@ -19,6 +19,8 @@ fs.mkdirSync(dir, { recursive: true });
 const port = process.env.PORT ?? "3210";
 const env = {
   ...process.env,
+  // Never let the sandbox reach a real database, even if .env.local names one.
+  DATABASE_URL: "",
   TRAJECTORY_DATA_DIR: dir,
   TRAJECTORY_SEED_DEMO: process.argv.includes("--demo") ? "true" : process.env.SANDBOX_DEMO ?? "false",
   // Own build folder too — never share .next with the main server.

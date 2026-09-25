@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftRight, Calculator, Clock, Minus, Plus, Target } from "lucide-react";
+import { ArrowLeftRight, Calculator, Clock, Minus, Plus, Scale, Target } from "lucide-react";
 import { useFinance, type ModalState } from "@/components/finance/FinanceProvider";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -11,6 +11,7 @@ const ITEMS: { label: string; hint: string; icon: typeof Plus; tone: string; mod
   { label: "Transfer money", hint: "Between accounts", icon: ArrowLeftRight, tone: "bg-accent-soft text-accent", modal: { kind: "transfer" } },
   { label: "Move to a goal", hint: "Earmark cash", icon: Target, tone: "bg-white/[0.08] text-fg", modal: { kind: "contribute" } },
   { label: "When will I have…", hint: "Date for a target", icon: Clock, tone: "bg-white/[0.08] text-fg", modal: { kind: "when" } },
+  { label: "Update balances", hint: "Match the app to your bank", icon: Scale, tone: "bg-white/[0.08] text-fg", modal: { kind: "balances" } },
 ];
 
 export function AddMenuSheet() {

@@ -7,7 +7,7 @@ import { parseMoney } from "@/engine";
 import { cn } from "@/lib/utils";
 
 const controlBase =
-  "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 text-[15px] text-fg placeholder:text-fg-subtle outline-none transition focus:border-positive/50 focus:bg-white/[0.06] focus:ring-2 focus:ring-positive/20 disabled:opacity-50";
+  "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3.5 text-base sm:text-[15px] text-fg placeholder:text-fg-subtle outline-none transition focus:border-positive/50 focus:bg-white/[0.06] focus:ring-2 focus:ring-positive/20 disabled:opacity-50";
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(({ className, ...props }, ref) => (
   <input ref={ref} className={cn(controlBase, "h-11", className)} {...props} />
@@ -80,6 +80,7 @@ export function MoneyInput({ value, onChange, allowNegative, className, size = "
       <span className={cn("pointer-events-none absolute top-1/2 -translate-y-1/2 text-fg-subtle tabular", prefixSize)}>$</span>
       <input
         inputMode="decimal"
+        enterKeyHint="done"
         autoComplete="off"
         className={cn(controlBase, "tabular", sizing, className)}
         value={text}

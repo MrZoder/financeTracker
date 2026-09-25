@@ -28,7 +28,8 @@ export type ModalState =
   | { kind: "command"; initial?: string }
   | { kind: "add-menu" }
   | { kind: "mark-pay"; preset: { incomeSourceId: string; scheduledDate: ISODate; amount: number } }
-  | { kind: "allocate" };
+  | { kind: "allocate" }
+  | { kind: "balances" };
 
 interface FinanceContextValue {
   data: AppData;

@@ -34,7 +34,7 @@ function GoalForm({ goal, close }: { goal: GoalView | null; close: () => void })
   const [kind, setKind] = React.useState<GoalKind>(goal?.kind ?? "savings");
   const [priority, setPriority] = React.useState<GoalPriority>(goal?.priority ?? "normal");
   const [target, setTarget] = React.useState<number | null>(goal?.targetCents ?? null);
-  const [saved, setSaved] = React.useState<number | null>(null);
+  const [saved, setSaved] = React.useState<number | null>(goal ? goal.balance : null);
   const [desiredDate, setDesiredDate] = React.useState<string | null>(goal?.desiredDate ?? null);
   const [mode, setMode] = React.useState<ContributionMode>(goal ? (goal.autoContributionCents ? "fixed" : goal.absorbsRemainder ? "remainder" : "manual") : "fixed");
   const [auto, setAuto] = React.useState<number | null>(goal?.autoContributionCents ?? null);
@@ -63,6 +63,7 @@ function GoalForm({ goal, close }: { goal: GoalView | null; close: () => void })
           onCompletion: kind === "purchase" && spendOnCompletion ? "spend" : "hold",
           notes: notes.trim() || null,
           initialBalanceCents: goal ? undefined : (saved ?? 0),
+          currentBalanceCents: goal ? saved : undefined,
         }),
       { success: goal ? "Goal updated" : `${name.trim()} added` },
     );
@@ -92,9 +93,9 @@ function GoalForm({ goal, close }: { goal: GoalView | null; close: () => void })
             <Field label="Target">
               <MoneyInput value={target} onChange={setTarget} size="lg" aria-label="Target amount" />
             </Field>
-            {!goal && kind !== "milestone" && (
-              <Field label="Already saved" hint="Cash you've set aside for this.">
-                <MoneyInput value={saved} onChange={setSaved} size="lg" aria-label="Already saved" />
+            {kind !== "milestone" && (
+              <Field label={goal ? "Saved so far" : "Already saved"} hint={goal ? "Change this if reality differs — the difference is recorded, not overwritten." : "Cash you've set aside for this."}>
+                <MoneyInput value={saved} onChange={setSaved} size="lg" aria-label="Saved so far" />
               </Field>
             )}
           </div>

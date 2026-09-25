@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 import { useFinance } from "@/components/finance/FinanceProvider";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
@@ -34,6 +35,7 @@ function MarkPayForm({ preset }: { preset: { incomeSourceId: string; scheduledDa
       () => markPayReceived({ incomeSourceId: preset.incomeSourceId, scheduledDate: preset.scheduledDate, amountCents: amount, receivedDate: date, accountId }),
       { success: `${formatAUD(amount)} pay received` },
     );
+    if (result?.alreadyReceived) toast.info("That pay was already marked as received — nothing was added twice.");
     if (result !== undefined) closeModal();
   };
 

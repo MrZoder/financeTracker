@@ -83,10 +83,10 @@ function markerVisible(kind: MarkerKind, horizon: number): boolean {
   return horizon <= 120;
 }
 
-function xTickDays(horizon: number, hasHistory: boolean, historyLen: number): number[] {
+function xTickDays(horizon: number, hasHistory: boolean, historyLen: number, width: number): number[] {
   const start = hasHistory ? -historyLen : 0;
   const span = horizon - start;
-  const count = 5;
+  const count = width < 420 ? 2 : width < 640 ? 3 : 5;
   const ticks: number[] = [];
   for (let i = 0; i <= count; i++) ticks.push(Math.round(start + (span * i) / count));
   return ticks;
@@ -190,7 +190,7 @@ export function ProjectionChart({
 
   const visibleMarkers = markers.filter((m) => markerVisible(m.kind, horizon) && m.day >= 0 && m.day <= horizon);
   const yTicks = minimal ? [] : y.ticks(4);
-  const xTicks = minimal ? [] : xTickDays(horizon, histLen > 0, histLen);
+  const xTicks = minimal ? [] : xTickDays(horizon, histLen > 0, histLen, w);
 
   const tooltipLeft = activeDay !== null ? x(activeDay) : 0;
   const flip = tooltipLeft > w * 0.62;
@@ -305,6 +305,7 @@ export function ProjectionChart({
             width={w}
             height={height}
             fill="transparent"
+            style={{ touchAction: "pan-y" }}
             className={onSelectDay || renderTooltip ? "cursor-crosshair" : undefined}
             onPointerMove={(e) => setHoverDay(dayFromEvent(e))}
             onPointerDown={(e) => setHoverDay(dayFromEvent(e))}

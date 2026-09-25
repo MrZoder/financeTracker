@@ -120,7 +120,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Top bar */}
-        <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-bg/70 backdrop-blur-xl">
+        <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-bg/70 backdrop-blur-xl safe-top">
           <div className="mx-auto flex h-14 max-w-[1180px] items-center gap-3 px-4 sm:px-6 lg:px-8">
             <div className="lg:hidden">
               <Logo />

@@ -180,9 +180,14 @@ function CashBreakdown() {
           <dd className="tabular text-negative">{totals.liabilities > 0 ? `−${formatAUD(totals.liabilities)}` : formatAUD(0)}</dd>
         </div>
       </dl>
-      <Link href="/net-worth" className="mt-4 inline-block text-xs font-medium text-fg-muted underline-offset-4 hover:text-fg hover:underline">
-        Full breakdown →
-      </Link>
+      <div className="mt-4 flex items-center gap-4 text-xs font-medium">
+        <button type="button" onClick={() => openModal({ kind: "balances" })} className="text-positive-bright underline-offset-4 hover:underline">
+          Update balances
+        </button>
+        <Link href="/net-worth" className="text-fg-muted underline-offset-4 hover:text-fg hover:underline">
+          Full breakdown →
+        </Link>
+      </div>
     </div>
   );
 }

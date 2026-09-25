@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { GoalDialog } from "./GoalDialog";
 
 export function GoalsView({ highlightId, openNew }: { highlightId: string | null; openNew: boolean }) {
-  const { data, run } = useFinance();
+  const { data, run, openModal } = useFinance();
   const active = data.goals.filter((g) => g.status === "active");
   const completed = data.goals.filter((g) => g.status === "completed");
   const [order, setOrder] = React.useState<string[]>(active.map((g) => g.id));
@@ -44,15 +44,20 @@ export function GoalsView({ highlightId, openNew }: { highlightId: string | null
         title="Goals"
         description="Money can only be spent once. Surplus flows to your emergency fund first, then down the list by priority — drag to change the order."
         action={
-          <Button
-            variant="primary"
-            onClick={() => {
-              setEditing(null);
-              setDialogOpen(true);
-            }}
-          >
-            <Plus className="h-4 w-4" /> New goal
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="secondary" onClick={() => openModal({ kind: "balances" })}>
+              Update balances
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setEditing(null);
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="h-4 w-4" /> New goal
+            </Button>
+          </div>
         }
       />
 

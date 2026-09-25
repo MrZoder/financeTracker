@@ -12,6 +12,7 @@ import { ContributeDialog } from "./dialogs/ContributeDialog";
 import { MarkPayDialog } from "./dialogs/MarkPayDialog";
 import { SimulatorDialog } from "./dialogs/SimulatorDialog";
 import { TransferDialog } from "./dialogs/TransferDialog";
+import { UpdateBalancesDialog } from "./dialogs/UpdateBalancesDialog";
 import { WhenDialog } from "./dialogs/WhenDialog";
 
 /** Every global dialog, mounted once; each one gates itself on the modal state. */
@@ -29,6 +30,7 @@ export function FinanceModals() {
       <AddMenuSheet />
       <MarkPayDialog />
       <AllocateDialog />
+      <UpdateBalancesDialog />
       <AnimatePresence>
         {overlay && modal.kind === "none" && (
           <motion.div

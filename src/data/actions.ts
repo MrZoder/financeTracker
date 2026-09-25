@@ -231,6 +231,8 @@ const goalSchema = z.object({
   fundingAccountId: idSchema.nullable().optional(),
   /** For a new goal: money already set aside. */
   initialBalanceCents: nonNegativeCents.optional(),
+  /** For an existing goal: what is actually saved now; the difference is recorded as a contribution. */
+  currentBalanceCents: nonNegativeCents.nullable().optional(),
 });
 
 export async function upsertGoal(input: z.input<typeof goalSchema>) {
@@ -254,6 +256,14 @@ export async function upsertGoal(input: z.input<typeof goalSchema>) {
   await db.transaction(async (tx) => {
     if (id) {
       await tx.update(s.savingsGoals).set(values).where(and(eq(s.savingsGoals.id, id), eq(s.savingsGoals.userId, userId)));
+      if (data.currentBalanceCents !== undefined && data.currentBalanceCents !== null && data.kind !== "milestone") {
+        const rows = await tx.select({ amount: s.goalContributions.amountCents, date: s.goalContributions.date }).from(s.goalContributions).where(eq(s.goalContributions.goalId, id));
+        const current = rows.filter((r) => r.date <= today).reduce((a, r) => a + r.amount, 0);
+        const diff = data.currentBalanceCents - current;
+        if (diff !== 0) {
+          await tx.insert(s.goalContributions).values({ userId, goalId: id, date: today, amountCents: diff, note: diff < 0 ? "Spent from savings (balance update)" : "Balance update" });
+        }
+      }
     } else {
       const existing = await tx.select({ sortOrder: s.savingsGoals.sortOrder }).from(s.savingsGoals).where(eq(s.savingsGoals.userId, userId));
       const sortOrder = existing.reduce((m, g) => Math.max(m, g.sortOrder), -1) + 1;
@@ -320,6 +330,64 @@ export async function spendGoal(input: z.input<typeof spendGoalSchema>) {
   refresh();
 }
 
+const correctBalancesSchema = z.object({
+  date: isoDate.optional(),
+  /** spending: book account differences as unlogged spending/income; adjustment: neutral correction. */
+  bookAs: z.enum(["spending", "adjustment"]).default("spending"),
+  accounts: z.array(z.object({ accountId: idSchema, balanceCents: cents })).default([]),
+  goals: z.array(z.object({ goalId: idSchema, balanceCents: nonNegativeCents })).default([]),
+});
+
+/**
+ * Bring accounts and goals in line with reality. Nothing is overwritten:
+ * each difference becomes a dated ledger entry (transaction or contribution).
+ */
+export async function correctBalances(input: z.input<typeof correctBalancesSchema>) {
+  const data = parseInput(correctBalancesSchema, input);
+  const { db, userId, today } = await context();
+  const date = data.date ?? today;
+  const changes: { label: string; deltaCents: number }[] = [];
+  await db.transaction(async (tx) => {
+    for (const entry of data.accounts) {
+      const [account] = await tx.select().from(s.accounts).where(and(eq(s.accounts.id, entry.accountId), eq(s.accounts.userId, userId)));
+      if (!account) continue;
+      const rows = await tx
+        .select({ amount: s.transactions.amountCents, date: s.transactions.date })
+        .from(s.transactions)
+        .where(and(eq(s.transactions.accountId, account.id), eq(s.transactions.status, "posted")));
+      const current = rows.filter((r) => r.date <= today).reduce((a, r) => a + r.amount, 0);
+      const diff = entry.balanceCents - current;
+      if (diff === 0) continue;
+      if (data.bookAs === "spending") {
+        await tx.insert(s.transactions).values({
+          userId,
+          accountId: account.id,
+          date,
+          amountCents: diff,
+          kind: diff < 0 ? "expense" : "income",
+          category: "other",
+          description: diff < 0 ? "Spending not logged (balance update)" : "Income not logged (balance update)",
+        });
+      } else {
+        await tx.insert(s.transactions).values({ userId, accountId: account.id, date, amountCents: diff, kind: "adjustment", category: "adjustment", description: "Balance correction" });
+      }
+      changes.push({ label: account.name, deltaCents: diff });
+    }
+    for (const entry of data.goals) {
+      const [goal] = await tx.select().from(s.savingsGoals).where(and(eq(s.savingsGoals.id, entry.goalId), eq(s.savingsGoals.userId, userId)));
+      if (!goal || goal.kind === "milestone") continue;
+      const rows = await tx.select({ amount: s.goalContributions.amountCents, date: s.goalContributions.date }).from(s.goalContributions).where(eq(s.goalContributions.goalId, goal.id));
+      const current = rows.filter((r) => r.date <= today).reduce((a, r) => a + r.amount, 0);
+      const diff = entry.balanceCents - current;
+      if (diff === 0) continue;
+      await tx.insert(s.goalContributions).values({ userId, goalId: goal.id, date, amountCents: diff, note: diff < 0 ? "Spent from savings (balance update)" : "Balance update" });
+      changes.push({ label: goal.name, deltaCents: diff });
+    }
+  });
+  refresh();
+  return { changes };
+}
+
 // ---------------------------------------------------------------------------
 // Pay
 // ---------------------------------------------------------------------------
@@ -339,6 +407,14 @@ export async function markPayReceived(input: z.input<typeof markPaySchema>) {
   if (!source) throw new Error("Income source not found");
   const accountId = await defaultLiquidAccount(db, userId, data.accountId ?? source.accountId);
   const date = data.receivedDate ?? (data.scheduledDate <= today ? data.scheduledDate : today);
+  const already = await db
+    .select()
+    .from(s.payEvents)
+    .where(and(eq(s.payEvents.incomeSourceId, source.id), eq(s.payEvents.scheduledDate, data.scheduledDate)));
+  if (already[0]?.status === "received") {
+    // Idempotent: a double tap or a stale dialog must never record the same pay twice.
+    return { alreadyReceived: true as const };
+  }
   await db.transaction(async (tx) => {
     const [txn] = await tx
       .insert(s.transactions)
@@ -366,6 +442,7 @@ export async function markPayReceived(input: z.input<typeof markPaySchema>) {
     }
   });
   refresh();
+  return { alreadyReceived: false as const };
 }
 
 const expectedPaySchema = z.object({ incomeSourceId: idSchema, scheduledDate: isoDate, amountCents: positiveCents.nullable() });

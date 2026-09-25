@@ -36,7 +36,7 @@ export function Kicker({ className, children }: { className?: string; children: 
 
 export function SectionTitle({ title, description, action, className }: { title: string; description?: string; action?: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("mb-4 flex items-end justify-between gap-4", className)}>
+    <div className={cn("mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between", className)}>
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-fg sm:text-[28px]">{title}</h1>
         {description ? <p className="mt-1 text-sm text-fg-muted">{description}</p> : null}
@@ -85,7 +85,7 @@ export function Tag({ children, tone = "neutral", className }: { children: React
     warning: "bg-warning-soft text-warning",
     accent: "bg-accent-soft text-accent",
   };
-  return <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium", tones[tone], className)}>{children}</span>;
+  return <span className={cn("inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium", tones[tone], className)}>{children}</span>;
 }
 
 export function EmptyState({ icon, title, description, action }: { icon?: React.ReactNode; title: string; description?: string; action?: React.ReactNode }) {
