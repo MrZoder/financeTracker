@@ -86,6 +86,12 @@ async function initialise(): Promise<Database> {
     );
   }
 
+  const { db } = await openEmbeddedDatabase();
+  return db;
+}
+
+/** Open the embedded PGlite database directly (ignores DATABASE_URL). Used by scripts too. */
+export async function openEmbeddedDatabase(): Promise<{ db: Database; client: PGlite }> {
   const dir = dataDirectory();
   fs.mkdirSync(dir, { recursive: true });
   acquireLock(dir);
@@ -94,7 +100,7 @@ async function initialise(): Promise<Database> {
   await client.waitReady;
   const db = drizzlePglite(client, { schema });
   await migratePglite(db, { migrationsFolder: migrationsFolder() });
-  return db;
+  return { db, client };
 }
 
 /** Shared, lazily-initialised database handle (survives HMR in development). */

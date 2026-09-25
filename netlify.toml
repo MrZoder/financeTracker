@@ -1,0 +1,18 @@
+# Netlify configuration for Trajectory (Next.js 15).
+# The Next.js runtime is detected automatically; listing it keeps the build explicit.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # Hosted deployments must use a real PostgreSQL via DATABASE_URL (set in the Netlify UI).
+  TRAJECTORY_SEED_DEMO = "false"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[functions]
+  # Drizzle reads the SQL migrations from disk when the app starts.
+  included_files = ["drizzle/**"]

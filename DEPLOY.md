@@ -1,55 +1,67 @@
-# Putting Trajectory on the web
+# Putting Trajectory on the web (Netlify + Neon)
 
-Goal: open Trajectory on your phone from anywhere, with your data stored in a real database that never disappears. Total time: about 15 minutes. Both services below have free tiers that comfortably fit a single-user app.
+Goal: open Trajectory on your phone from anywhere, with your data in a real database that never disappears. Both services have free tiers that comfortably fit a single-user app.
 
-Locally, Trajectory uses an embedded database on your disk. A hosted server has no permanent disk, so hosting means pointing the app at a hosted PostgreSQL via `DATABASE_URL`. The app already supports this; nothing in the code changes between the two modes.
+Locally, Trajectory uses an embedded database on your disk. A hosted server has no permanent disk, so hosting means pointing the app at a hosted PostgreSQL through `DATABASE_URL`. Nothing else changes.
 
-## 1. Create the database (Neon)
+## 1. Database: Neon
 
-1. Go to <https://neon.tech>, sign in with GitHub, create a project (name it `trajectory`, pick the Sydney/Singapore region if offered).
-2. On the project dashboard click **Connect**, choose **Pooled connection**, and copy the connection string. It looks like `postgresql://user:password@ep-xxxx-pooler.ap-southeast-2.aws.neon.tech/neondb?sslmode=require`.
+You already have a Neon project. You need its **pooled connection string**:
 
-That's the whole database setup. Tables are created automatically the first time the app starts.
+- Neon dashboard → your project → **Connect** → choose **Pooled connection** → copy. It looks like
+  `postgresql://user:password@ep-xxxx-pooler.ap-southeast-2.aws.neon.tech/neondb?sslmode=require`
+- or with the Neon CLI: `neon connection-string --pooled` inside this folder after `neon link`.
 
-## 2. Deploy the app (Vercel)
+Tables are created automatically the first time the app starts against it.
 
-1. Go to <https://vercel.com/new>, sign in with GitHub, and import **MrZoder/financeTracker**. Leave the framework preset as Next.js and the defaults as they are.
-2. Before clicking Deploy, open **Environment Variables** and add:
+## 2. Host: Netlify
 
-   | Name | Value |
+1. <https://app.netlify.com/start> → import **MrZoder/financeTracker**. The Next.js runtime is detected automatically; `netlify.toml` in the repo sets the rest (Node 22, build command, migration files).
+2. Under **Environment variables** add these four — the first three with **Contains secret values** ticked:
+
+   | Key | Value |
    | --- | --- |
-   | `DATABASE_URL` | the Neon connection string from step 1 |
-   | `TRAJECTORY_PASSPHRASE` | a passphrase only you know — this is the lock on your financial data |
-   | `TRAJECTORY_SESSION_SECRET` | a long random string (40+ characters, any keyboard mashing works) |
+   | `DATABASE_URL` | the Neon pooled connection string |
+   | `TRAJECTORY_PASSPHRASE` | a passphrase only you know — the lock on your financial data |
+   | `TRAJECTORY_SESSION_SECRET` | a long random string (40+ characters) |
    | `TRAJECTORY_TIMEZONE` | `Australia/Sydney` |
 
-3. Click **Deploy**. Two or three minutes later you get a URL like `https://finance-tracker-xxxx.vercel.app`.
+3. Click **Deploy**. A few minutes later you get a URL like `https://financetrajectory.netlify.app`.
 
-Do not skip the passphrase. Without it, anyone who guesses the URL sees your finances.
+Do not skip the passphrase. Without it, anyone who finds the URL sees your finances.
 
 ## 3. Move your data across
 
-1. On your computer, open the local app → **Settings → Export everything (JSON)**. Save the file somewhere your phone can reach (email it to yourself, AirDrop, Drive).
-2. Open the Vercel URL, enter your passphrase. You land on the setup questions. At the bottom, tap **Restore a Trajectory backup** and pick the exported file.
-3. Done — the dashboard appears with everything exactly as it was locally.
+**Easiest — copy the local database straight into Neon** (from this folder, with the local server stopped):
 
-From then on the hosted copy is the real one. Use it from both phone and computer; the data lives in Neon.
+```bash
+npm run db:to-cloud
+```
 
-## 4. Put it on your home screen
+It reads `DATABASE_URL` from `.env.local`, prints what it found locally, and copies every record. Add `-- --force` to replace data already in the cloud.
 
-- **iPhone (Safari)**: Share → **Add to Home Screen**. It opens full-screen like an app.
+**Alternative — export/restore:** local app → Settings → **Export everything (JSON)**; then on the hosted app's setup page tap **Restore a Trajectory backup**.
+
+## 4. Use the same data on the computer too
+
+Put the same `DATABASE_URL` in `.env.local` (git-ignored) and `npm run dev` uses Neon instead of the embedded database. Phone and computer then share one source of truth. Leave the passphrase out of `.env.local` if you don't want a login screen at home.
+
+## 5. Put it on your phone's home screen
+
+- **iPhone (Safari)**: Share → **Add to Home Screen**. Opens full-screen like an app.
 - **Android (Chrome)**: menu → **Add to Home screen** / **Install app**.
 
 ## Updating later
 
-Every `git push` to `main` redeploys automatically. Database changes are applied on the next start (migrations run automatically).
+Every `git push` to `main` redeploys on Netlify. Database changes apply automatically on the next start.
 
-## Keeping a backup
+## Backups
 
-Neon keeps its own point-in-time history, but **Settings → Export everything** downloads a complete JSON backup you can restore anywhere, including back onto your computer with `npm run dev` → setup page → Restore.
+Neon keeps point-in-time history. **Settings → Export everything** downloads a complete JSON backup you can restore anywhere, including back onto a computer.
 
 ## If something goes wrong
 
-- **"DATABASE_URL is not set"** on the deployed site: add the variable in Vercel → Settings → Environment Variables, then Redeploy.
-- **Login loop**: the session cookie needs `https`, which Vercel provides. Check `TRAJECTORY_PASSPHRASE` has no trailing spaces.
-- **Wrong "today"**: set `TRAJECTORY_TIMEZONE` (or change the timezone in Settings) — the server's clock is not used.
+- **"DATABASE_URL is not set"** on the site: add it under Site configuration → Environment variables, then trigger a redeploy.
+- **Login loop**: check `TRAJECTORY_PASSPHRASE` has no trailing spaces; cookies need https (Netlify provides it).
+- **Wrong "today"**: set `TRAJECTORY_TIMEZONE` or change the timezone in Settings — the server clock is never used.
+- **Build fails on Netlify**: open the deploy log; the same `npm run build` works locally, so it's almost always a missing environment variable.
